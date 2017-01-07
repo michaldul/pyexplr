@@ -34,11 +34,20 @@ def init_color_pairs():
     curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_BLACK)
 
 
+def get_limited_repr(obj, limit):
+    original = repr(obj)
+    if len(original) > limit:
+        return original[:limit - 3] + '...'
+    return original
+
+
 def print_obj(stdsrc, obj, selected):
     for row, el in enumerate(obj):
         color_pair = curses.color_pair(2 if selected == row else 1)
+
         stdsrc.addstr(row, 0, str(row) + ':', color_pair)
-        stdsrc.addstr(row, 3, str(el), color_pair)
+        stdsrc.addstr(row, 4, get_limited_repr(el, 30), color_pair)
+        stdsrc.addstr(row, 40, str(type(el)), color_pair)
 
 
 def pyexplr(obj):
