@@ -1,7 +1,7 @@
 
 # TODO: refactor
 
-class Selection:
+class Navigation:
     def __init__(self, obj):
         self.obj = obj
         self.position = [[0, len(self.obj)]]
@@ -12,6 +12,9 @@ class Selection:
             self.position = self.position[:-1] if len(self.position) > 1 else self.position[:1]
         else:
             self.position[-1][0] -= 1
+            while self.is_selection_expanded():
+                obj = self.get_selected()
+                self.position.append([len(obj) - 1, len(obj)])
 
     def move_down(self):
         if self.is_selection_expanded():
@@ -52,7 +55,7 @@ class Selection:
 
 
 def test_selection():
-    s = Selection([1, [2, 3], 4])
+    s = Navigation([1, [2, 3], 4])
     s.move_up()
     assert s.position == [[0, 3]]
     s.move_down()
@@ -70,8 +73,11 @@ def test_selection():
     assert s.position == [[2, 3]]
     s.move_down()
     assert s.position == [[2, 3]]
+    s.move_up()
+    assert s.position == [[1, 3], [1, 2]]
 
     print('navigation test passed')
 
 
-# test_selection()
+if __name__ == '__main__':
+    test_selection()

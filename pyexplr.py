@@ -1,5 +1,7 @@
 import curses
 
+from navigation import Navigation
+
 
 def _explr(stdscr, obj):
     assert curses.has_colors()
@@ -8,19 +10,22 @@ def _explr(stdscr, obj):
     stdscr.clear()
     curses.curs_set(0)
 
-    selected = 0
+    selection = Navigation(obj)
 
-    print_obj(stdscr, obj, selected)
+    print_obj(stdscr, obj, selection.expanded, selection.position)
 
     while True:
         c = stdscr.getch()
         if c == ord('q'):
             break
         elif c == curses.KEY_UP or c == ord('k'):
-            selected = max(selected - 1, 0)
+            selection.move_up()
         elif c == curses.KEY_DOWN or c == ord('j'):
-            selected = min(selected + 1, len(obj) - 1)
-        print_obj(stdscr, obj, selected)
+            selection.move_down()
+        elif c == curses.KEY_RIGHT or c == ord('l'):
+            selection.expand()
+        stdscr.clear()
+        print_obj(stdscr, obj, selection.expanded, selection.position)
         stdscr.refresh()
 
     stdscr.clear()
@@ -41,13 +46,28 @@ def get_limited_repr(obj, limit):
     return original
 
 
-def print_obj(stdsrc, obj, selected):
-    for row, el in enumerate(obj):
-        color_pair = curses.color_pair(2 if selected == row else 1)
+# TODO: refactor (Navigation refactoring)
+def print_obj(stdsrc, obj, expanded, selection, zero_row=0, level=0):
+    inner_rows = 0
 
-        stdsrc.addstr(row, 0, str(row) + ':', color_pair)
-        stdsrc.addstr(row, 4, get_limited_repr(el, 30), color_pair)
-        stdsrc.addstr(row, 40, str(type(el)), color_pair)
+    for row, el in enumerate(obj):
+
+        if selection and len(selection) == 1 and selection[0][0] == row:
+            color_pair = curses.color_pair(2)
+        else: color_pair = curses.color_pair(1)
+
+        indent = 3 * level
+        stdsrc.addstr(zero_row + row + inner_rows, indent, str(row) + ':', color_pair)
+        stdsrc.addstr(zero_row + row + inner_rows, indent + 4, get_limited_repr(el, 30), color_pair)
+        stdsrc.addstr(zero_row + row + inner_rows, 50, str(type(el)), color_pair)
+
+        if row in expanded:
+            inner_rows += print_obj(stdsrc, obj[row], expanded[row],
+                                    selection[1:] if selection[0][0] == row else None,
+                                    zero_row=zero_row + inner_rows + row + 1,
+                                    level=level + 1)
+
+    return inner_rows + len(obj)
 
 
 def pyexplr(obj):
